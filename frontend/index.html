@@ -1,0 +1,1118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task Tracker</title>
+  <style>
+    :root {
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    .page {
+      margin: 0 auto;
+      max-width: 1200px;
+      padding: 32px;
+    }
+
+    .page-header {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .header-actions {
+      align-items: center;
+      display: flex;
+      gap: 14px;
+    }
+
+    .overdue-filter {
+      align-items: center;
+      color: #475467;
+      display: flex;
+      font-size: 0.9rem;
+      gap: 6px;
+    }
+
+    .deleted-section,
+    .activity-panel {
+      background: #ffffff;
+      border: 1px solid #d0d5dd;
+      border-radius: 12px;
+      margin-top: 28px;
+      padding: 20px;
+    }
+
+    .section-header {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .section-header h2 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .deleted-task-list,
+    .activity-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .activity-item {
+      border-bottom: 1px solid #eaecf0;
+      display: grid;
+      gap: 4px;
+      padding-bottom: 10px;
+    }
+
+    .activity-item:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .activity-time {
+      color: #667085;
+      font-size: 0.8rem;
+    }
+
+    .restore-button {
+      background: #ffffff;
+      border: 1px solid #98a2b3;
+      border-radius: 6px;
+      color: #344054;
+      padding: 7px 10px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+    }
+
+    .subtitle {
+      color: #667085;
+      margin: 0;
+    }
+
+    .board {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .board-state {
+      background: #ffffff;
+      border: 1px solid #d0d5dd;
+      border-radius: 10px;
+      grid-column: 1 / -1;
+      padding: 14px;
+    }
+
+    .board-state p {
+      margin: 0;
+    }
+
+    .board-state-error {
+      border-color: #fecdca;
+      color: #b42318;
+    }
+
+    .retry-button {
+      background: #ffffff;
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      color: inherit;
+      margin-top: 10px;
+      padding: 7px 10px;
+    }
+
+    .column {
+      background: #eaecf3;
+      border: 1px solid #d0d5dd;
+      border-radius: 12px;
+      min-height: 360px;
+      padding: 16px;
+    }
+
+    .column-header {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .column-header h2 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .task-count {
+      background: #d0d5dd;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      padding: 4px 8px;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .task-card {
+      background: #ffffff;
+      border: 1px solid #d0d5dd;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .task-card[draggable="true"] {
+      cursor: grab;
+    }
+
+    .task-card.is-dragging {
+      opacity: 0.45;
+    }
+
+    .column.is-drag-over {
+      border-color: #6172f3;
+      box-shadow: inset 0 0 0 2px #c7d7fe;
+    }
+
+    .task-card h3 {
+      font-size: 1rem;
+      margin: 0 0 8px;
+    }
+
+    .task-description {
+      color: #667085;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin: 0 0 14px;
+    }
+
+    .task-meta {
+      align-items: center;
+      display: flex;
+      font-size: 0.85rem;
+      gap: 8px;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .priority {
+      border-radius: 999px;
+      font-weight: bold;
+      padding: 4px 8px;
+    }
+
+    .priority-high {
+      background: #fee4e2;
+      color: #b42318;
+    }
+
+    .priority-medium {
+      background: #fef0c7;
+      color: #93370d;
+    }
+
+    .priority-low {
+      background: #d1fadf;
+      color: #027a48;
+    }
+
+    .assignee {
+      color: #667085;
+    }
+
+    .task-due-date {
+      align-items: center;
+      color: #475467;
+      display: flex;
+      font-size: 0.85rem;
+      gap: 8px;
+      margin: 0 0 14px;
+    }
+
+    .overdue-pill {
+      background: #fee4e2;
+      border-radius: 999px;
+      color: #b42318;
+      font-weight: bold;
+      padding: 3px 7px;
+    }
+
+    .edit-button {
+      background: #ffffff;
+      border: 1px solid #98a2b3;
+      border-radius: 6px;
+      color: #344054;
+      padding: 7px 10px;
+    }
+
+    .delete-button {
+      background: #ffffff;
+      border: 1px solid #fda29b;
+      border-radius: 6px;
+      color: #b42318;
+      margin-left: 8px;
+      padding: 7px 10px;
+    }
+
+    .new-task-button {
+      background: #344054;
+      border: 1px solid #344054;
+      border-radius: 6px;
+      color: #ffffff;
+      padding: 9px 12px;
+    }
+
+    dialog {
+      border: 0;
+      border-radius: 12px;
+      box-shadow: 0 20px 45px rgb(16 24 40 / 25%);
+      max-width: 560px;
+      padding: 0;
+      width: calc(100% - 32px);
+    }
+
+    dialog::backdrop {
+      background: rgb(16 24 40 / 50%);
+    }
+
+    .modal-content {
+      padding: 24px;
+    }
+
+    .modal-header {
+      align-items: start;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      margin: 0 0 6px;
+    }
+
+    .close-button {
+      background: transparent;
+      border: 0;
+      color: #667085;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .task-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-field label {
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      border: 1px solid #98a2b3;
+      border-radius: 6px;
+      min-width: 0;
+      padding: 9px;
+      width: 100%;
+    }
+
+    .form-field textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .form-row {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-error {
+      color: #b42318;
+      margin: 0;
+      min-height: 1.25em;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: end;
+    }
+
+    @media (max-width: 800px) {
+      .page {
+        padding: 20px;
+      }
+
+      .board {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .header-actions {
+        align-items: end;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <h1>Task Tracker</h1>
+        <p class="subtitle">A simple Kanban board for tracking your work.</p>
+      </div>
+      <div class="header-actions">
+        <label class="overdue-filter" for="overdue-filter">
+          <input id="overdue-filter" type="checkbox">
+          Overdue only
+        </label>
+        <label class="overdue-filter" for="deleted-filter">
+          <input id="deleted-filter" type="checkbox">
+          Show deleted
+        </label>
+        <button class="new-task-button" id="new-task-button" type="button">New Task</button>
+      </div>
+    </header>
+
+    <!-- This board structure can later be rendered from API task data. -->
+    <section class="board" id="board" aria-label="Task board">
+      <section class="column" data-status="ToDo">
+        <header class="column-header">
+          <h2>To Do</h2>
+          <span class="task-count">1</span>
+        </header>
+        <div class="task-list">
+          <article class="task-card" data-task-id="sample-todo">
+            <h3>Plan the project kickoff</h3>
+            <p class="task-description">Outline the first tasks and confirm the initial priorities.</p>
+            <div class="task-meta">
+              <span class="priority priority-high">High</span>
+              <span class="assignee">Unassigned</span>
+            </div>
+            <button class="edit-button" type="button">Edit</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="column" data-status="InProgress">
+        <header class="column-header">
+          <h2>In Progress</h2>
+          <span class="task-count">1</span>
+        </header>
+        <div class="task-list">
+          <article class="task-card" data-task-id="sample-in-progress">
+            <h3>Build the task API</h3>
+            <p class="task-description">Implement and verify the task management endpoints.</p>
+            <div class="task-meta">
+              <span class="priority priority-medium">Medium</span>
+              <span class="assignee">Alex</span>
+            </div>
+            <button class="edit-button" type="button">Edit</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="column" data-status="Done">
+        <header class="column-header">
+          <h2>Done</h2>
+          <span class="task-count">1</span>
+        </header>
+        <div class="task-list">
+          <article class="task-card" data-task-id="sample-done">
+            <h3>Set up the project</h3>
+            <p class="task-description">Create the initial folder structure and development environment.</p>
+            <div class="task-meta">
+              <span class="priority priority-low">Low</span>
+              <span class="assignee">Morgan</span>
+            </div>
+            <button class="edit-button" type="button">Edit</button>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="deleted-section" hidden id="deleted-section" aria-label="Deleted tasks">
+      <header class="section-header">
+        <h2>Deleted</h2>
+        <span class="task-count" id="deleted-task-count">0</span>
+      </header>
+      <div class="deleted-task-list" id="deleted-task-list"></div>
+    </section>
+
+    <section class="activity-panel" aria-label="Recent activity">
+      <header class="section-header">
+        <h2>Recent activity</h2>
+      </header>
+      <div class="activity-list" id="activity-list" aria-live="polite"></div>
+    </section>
+
+  </main>
+
+  <dialog aria-labelledby="task-modal-title" id="task-modal">
+    <div class="modal-content">
+      <header class="modal-header">
+        <div>
+          <h2 id="task-modal-title">New Task</h2>
+          <p class="subtitle" id="task-modal-subtitle">Add a task to the board.</p>
+        </div>
+        <button aria-label="Close task form" class="close-button" id="close-modal-button" type="button">×</button>
+      </header>
+
+      <form class="task-form" id="task-form" novalidate>
+        <input id="task-id" name="taskId" type="hidden">
+
+        <div class="form-field">
+          <label for="task-title">Title</label>
+          <input id="task-title" maxlength="200" name="title" type="text">
+        </div>
+
+        <div class="form-field">
+          <label for="task-description">Description</label>
+          <textarea id="task-description" name="description"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="task-due-date">Due date</label>
+          <input id="task-due-date" name="dueDate" type="date">
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="task-status">Status</label>
+            <select id="task-status" name="status">
+              <option value="ToDo">To Do</option>
+              <option value="InProgress">In Progress</option>
+              <option value="Done">Done</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="task-priority">Priority</label>
+            <select id="task-priority" name="priority">
+              <option value="Low">Low</option>
+              <option selected value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="task-assignee">Assignee</label>
+          <input id="task-assignee" name="assignee" type="text">
+        </div>
+
+        <p aria-live="polite" class="form-error" id="task-form-error"></p>
+
+        <div class="modal-actions">
+          <button class="edit-button" id="cancel-modal-button" type="button">Cancel</button>
+          <button class="new-task-button" id="save-task-button" type="submit">Create Task</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <script>
+    const API_BASE_URL = "http://localhost:8000";
+    const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 };
+    const STATUS_VALUES = ["ToDo", "InProgress", "Done"];
+    const board = document.querySelector("#board");
+    const newTaskButton = document.querySelector("#new-task-button");
+    const taskModal = document.querySelector("#task-modal");
+    const taskForm = document.querySelector("#task-form");
+    const taskIdInput = document.querySelector("#task-id");
+    const taskTitleInput = document.querySelector("#task-title");
+    const taskDescriptionInput = document.querySelector("#task-description");
+    const taskDueDateInput = document.querySelector("#task-due-date");
+    const taskStatusInput = document.querySelector("#task-status");
+    const taskPriorityInput = document.querySelector("#task-priority");
+    const taskAssigneeInput = document.querySelector("#task-assignee");
+    const overdueFilter = document.querySelector("#overdue-filter");
+    const deletedFilter = document.querySelector("#deleted-filter");
+    const deletedSection = document.querySelector("#deleted-section");
+    const deletedTaskList = document.querySelector("#deleted-task-list");
+    const deletedTaskCount = document.querySelector("#deleted-task-count");
+    const activityList = document.querySelector("#activity-list");
+    const taskFormError = document.querySelector("#task-form-error");
+    const saveTaskButton = document.querySelector("#save-task-button");
+    const HTML_ENTITIES = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+
+    let tasks = [];
+    let activity = [];
+    let boardState = "loading";
+    let errorMessage = "";
+
+    function escapeTaskText(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (character) => HTML_ENTITIES[character]);
+    }
+
+    function sortTasks(tasksToSort) {
+      return [...tasksToSort].sort((first, second) => {
+        const priorityDifference = PRIORITY_ORDER[first.priority] - PRIORITY_ORDER[second.priority];
+
+        if (priorityDifference !== 0) {
+          return priorityDifference;
+        }
+
+        return String(first.id).localeCompare(String(second.id));
+      });
+    }
+
+    function renderEmptyColumn(taskList, message = "No tasks in this column.") {
+      const emptyMessage = document.createElement("p");
+      emptyMessage.className = "task-description";
+      emptyMessage.textContent = message;
+      taskList.append(emptyMessage);
+    }
+
+    function renderBoardState() {
+      if (boardState === "ready") {
+        return;
+      }
+
+      const stateMessage = document.createElement("section");
+      stateMessage.className = `board-state board-state-${boardState}`;
+      const message = document.createElement("p");
+
+      if (boardState === "loading") {
+        message.textContent = "Loading tasks…";
+      } else if (boardState === "empty") {
+        message.textContent = overdueFilter.checked
+          ? "No overdue tasks."
+          : "No tasks yet. Your board is ready for its first task.";
+      } else {
+        message.textContent = errorMessage || "Could not load tasks.";
+        const retryButton = document.createElement("button");
+        retryButton.className = "retry-button";
+        retryButton.type = "button";
+        retryButton.textContent = "Retry";
+        retryButton.addEventListener("click", fetchTasks);
+        stateMessage.append(retryButton);
+      }
+
+      stateMessage.prepend(message);
+      board.prepend(stateMessage);
+    }
+
+    function renderTaskCard(task) {
+      const card = document.createElement("article");
+      const description = task.description || "No description";
+      const assignee = task.assignee || "Unassigned";
+      const dueDate = task.due_date
+        ? `<p class="task-due-date">Due: ${escapeTaskText(task.due_date)}${task.is_overdue ? '<span class="overdue-pill">Overdue</span>' : ""}</p>`
+        : "";
+
+      card.className = "task-card";
+      card.dataset.taskId = task.id;
+      card.draggable = true;
+      card.innerHTML = `
+        <h3>${escapeTaskText(task.title)}</h3>
+        <p class="task-description">${escapeTaskText(description)}</p>
+        <div class="task-meta">
+          <span class="priority priority-${escapeTaskText(task.priority.toLowerCase())}">${escapeTaskText(task.priority)}</span>
+          <span class="assignee">${escapeTaskText(assignee)}</span>
+        </div>
+        ${dueDate}
+        <button class="edit-button" type="button">Edit</button>
+        <button class="delete-button" type="button">Delete</button>
+      `;
+
+      card.addEventListener("dragstart", (event) => {
+        card.classList.add("is-dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", task.id);
+      });
+
+      card.addEventListener("dragend", () => {
+        card.classList.remove("is-dragging");
+        document.querySelectorAll(".column.is-drag-over").forEach((column) => {
+          column.classList.remove("is-drag-over");
+        });
+      });
+
+      card.querySelector(".edit-button").addEventListener("click", (event) => {
+        event.stopPropagation();
+        openEditTaskModal(task);
+      });
+
+      card.querySelector(".delete-button").addEventListener("click", (event) => {
+        event.stopPropagation();
+        deleteTask(task.id);
+      });
+
+      return card;
+    }
+
+    function renderDeletedTaskCard(task) {
+      const card = document.createElement("article");
+      const description = task.description || "No description";
+      const assignee = task.assignee || "Unassigned";
+      const dueDate = task.due_date
+        ? `<p class="task-due-date">Due: ${escapeTaskText(task.due_date)}</p>`
+        : "";
+
+      card.className = "task-card";
+      card.dataset.taskId = task.id;
+      card.innerHTML = `
+        <h3>${escapeTaskText(task.title)}</h3>
+        <p class="task-description">${escapeTaskText(description)}</p>
+        <div class="task-meta">
+          <span class="priority priority-${escapeTaskText(task.priority.toLowerCase())}">${escapeTaskText(task.priority)}</span>
+          <span class="assignee">${escapeTaskText(assignee)}</span>
+        </div>
+        ${dueDate}
+        <button class="restore-button" type="button">Restore</button>
+      `;
+
+      card.querySelector(".restore-button").addEventListener("click", () => restoreTask(task.id));
+      return card;
+    }
+
+    function renderDeletedTasks(tasksToRender, message = "No deleted tasks.") {
+      deletedTaskList.replaceChildren();
+      deletedTaskCount.textContent = tasksToRender.length;
+
+      if (tasksToRender.length === 0) {
+        renderEmptyColumn(deletedTaskList, message);
+        return;
+      }
+
+      sortTasks(tasksToRender).forEach((task) => deletedTaskList.append(renderDeletedTaskCard(task)));
+    }
+
+    function activitySummary(event) {
+      if (event.event_type === "status_changed") {
+        return `Status changed from ${event.details.from_status} to ${event.details.to_status}`;
+      }
+
+      if (event.event_type === "updated") {
+        return `Updated ${event.details.changed_fields.join(", ")}`;
+      }
+
+      const title = event.details.title || "task";
+      return `${event.event_type.charAt(0).toUpperCase()}${event.event_type.slice(1)} ${title}`;
+    }
+
+    function renderActivity() {
+      activityList.replaceChildren();
+
+      if (activity.length === 0) {
+        renderEmptyColumn(activityList, "No activity yet.");
+        return;
+      }
+
+      activity.forEach((event) => {
+        const item = document.createElement("article");
+        const summary = document.createElement("strong");
+        const time = document.createElement("span");
+
+        item.className = "activity-item";
+        summary.textContent = activitySummary(event);
+        time.className = "activity-time";
+        time.textContent = new Date(event.timestamp).toLocaleString();
+        item.append(summary, time);
+        activityList.append(item);
+      });
+    }
+
+    async function fetchActivity() {
+      activityList.replaceChildren();
+      renderEmptyColumn(activityList, "Loading activity…");
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/activity`);
+
+        if (!response.ok) {
+          throw new Error(`Unable to load activity: HTTP ${response.status}`);
+        }
+
+        activity = await response.json();
+        renderActivity();
+      } catch (error) {
+        activity = [];
+        activityList.replaceChildren();
+        renderEmptyColumn(activityList, "Could not load activity.");
+      }
+    }
+
+    function renderBoard(tasksToRender) {
+      const tasksByStatus = Object.fromEntries(
+        STATUS_VALUES.map((status) => [status, []]),
+      );
+
+      tasksToRender.forEach((task) => {
+        if (tasksByStatus[task.status]) {
+          tasksByStatus[task.status].push(task);
+        }
+      });
+
+      board.querySelectorAll(".board-state").forEach((message) => message.remove());
+      renderBoardState();
+
+      STATUS_VALUES.forEach((status) => {
+        const column = document.querySelector(`.column[data-status="${status}"]`);
+        const taskList = column.querySelector(".task-list");
+        const taskCount = column.querySelector(".task-count");
+        const columnTasks = sortTasks(tasksByStatus[status]);
+
+        taskList.replaceChildren();
+        taskCount.textContent = columnTasks.length;
+
+        if (columnTasks.length === 0) {
+          const emptyMessage = boardState === "loading"
+            ? "Loading tasks…"
+            : boardState === "error"
+              ? "Tasks are unavailable. Try loading the board again."
+              : "No tasks in this column.";
+          renderEmptyColumn(taskList, emptyMessage);
+          return;
+        }
+
+        columnTasks.forEach((task) => taskList.append(renderTaskCard(task)));
+      });
+    }
+
+    async function fetchTasks() {
+      const showingDeleted = deletedFilter.checked;
+
+      board.hidden = showingDeleted;
+      deletedSection.hidden = !showingDeleted;
+      boardState = "loading";
+      errorMessage = "";
+
+      if (showingDeleted) {
+        renderDeletedTasks([], "Loading deleted tasks…");
+      } else {
+        renderBoard([]);
+      }
+
+      try {
+        const query = showingDeleted
+          ? "?deleted=true"
+          : overdueFilter.checked
+            ? "?overdue=true"
+            : "";
+        const response = await fetch(`${API_BASE_URL}/tasks${query}`);
+
+        if (!response.ok) {
+          throw new Error(`Unable to load tasks: HTTP ${response.status}`);
+        }
+
+        tasks = await response.json();
+
+        if (showingDeleted) {
+          renderDeletedTasks(tasks);
+          await fetchActivity();
+          return;
+        }
+
+        boardState = tasks.length === 0 ? "empty" : "ready";
+        renderBoard(tasks);
+        await fetchActivity();
+      } catch (error) {
+        console.error(error);
+        tasks = [];
+
+        if (showingDeleted) {
+          renderDeletedTasks([], "Could not load deleted tasks. Check that the API is running, then try again.");
+          return;
+        }
+
+        boardState = "error";
+        errorMessage = "Could not load tasks. Check that the API is running, then try again.";
+        renderBoard([]);
+      }
+    }
+
+    function getServerError(payload, fallback) {
+      if (typeof payload?.detail === "string") {
+        return payload.detail;
+      }
+
+      if (Array.isArray(payload?.detail)) {
+        return payload.detail.map((item) => item.msg).join(" ");
+      }
+
+      return fallback;
+    }
+
+    function clearTaskForm() {
+      taskForm.reset();
+      taskIdInput.value = "";
+      taskStatusInput.value = "ToDo";
+      taskPriorityInput.value = "Medium";
+      taskFormError.textContent = "";
+    }
+
+    function closeTaskModal() {
+      if (taskModal.open) {
+        taskModal.close();
+      }
+
+      clearTaskForm();
+    }
+
+    function openCreateTaskModal() {
+      clearTaskForm();
+      document.querySelector("#task-modal-title").textContent = "New Task";
+      document.querySelector("#task-modal-subtitle").textContent = "Add a task to the board.";
+      saveTaskButton.textContent = "Create Task";
+      taskModal.showModal();
+      taskTitleInput.focus();
+    }
+
+    function openEditTaskModal(task) {
+      taskIdInput.value = task.id;
+      taskTitleInput.value = task.title;
+      taskDescriptionInput.value = task.description || "";
+      taskDueDateInput.value = task.due_date || "";
+      taskStatusInput.value = task.status;
+      taskPriorityInput.value = task.priority;
+      taskAssigneeInput.value = task.assignee || "";
+      taskFormError.textContent = "";
+      document.querySelector("#task-modal-title").textContent = "Edit Task";
+      document.querySelector("#task-modal-subtitle").textContent = "Update the fields that need to change.";
+      saveTaskButton.textContent = "Save Changes";
+      taskModal.showModal();
+      taskTitleInput.focus();
+    }
+
+    function taskPayloadFromForm() {
+      return {
+        title: taskTitleInput.value.trim(),
+        description: taskDescriptionInput.value,
+        due_date: taskDueDateInput.value || null,
+        status: taskStatusInput.value,
+        priority: taskPriorityInput.value,
+        assignee: taskAssigneeInput.value.trim() || null,
+      };
+    }
+
+    function changedTaskFields(payload, task) {
+      return Object.fromEntries(
+        Object.entries(payload).filter(([field, value]) => value !== task[field]),
+      );
+    }
+
+    async function saveTask(event) {
+      event.preventDefault();
+      taskFormError.textContent = "";
+      const payload = taskPayloadFromForm();
+
+      if (!payload.title) {
+        taskFormError.textContent = "Title is required";
+        taskTitleInput.focus();
+        return;
+      }
+
+      const taskId = taskIdInput.value;
+      let path = "/tasks";
+      let method = "POST";
+      let body = payload;
+
+      if (taskId) {
+        const currentTask = tasks.find((task) => task.id === taskId);
+
+        if (!currentTask) {
+          taskFormError.textContent = "This task is no longer available. Refresh the board and try again.";
+          return;
+        }
+
+        body = changedTaskFields(payload, currentTask);
+        if (Object.keys(body).length === 0) {
+          closeTaskModal();
+          return;
+        }
+
+        path = `/tasks/${taskId}`;
+        method = "PATCH";
+      }
+
+      saveTaskButton.disabled = true;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const responseBody = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          taskFormError.textContent = getServerError(
+            responseBody,
+            `Could not save task: HTTP ${response.status}`,
+          );
+          return;
+        }
+
+        closeTaskModal();
+        await fetchTasks();
+      } catch (error) {
+        taskFormError.textContent = "Could not save the task. Check your network connection and try again.";
+      } finally {
+        saveTaskButton.disabled = false;
+      }
+    }
+
+    async function restoreTask(taskId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/restore`, {
+          method: "POST",
+        });
+        const responseBody = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(getServerError(responseBody, `Could not restore task: HTTP ${response.status}`));
+        }
+
+        await fetchTasks();
+      } catch (error) {
+        renderDeletedTasks(
+          tasks,
+          error instanceof TypeError
+            ? "Could not restore the task. Check your network connection and try again."
+            : error.message,
+        );
+      }
+    }
+
+    async function deleteTask(taskId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          const responseBody = await response.json().catch(() => null);
+          throw new Error(getServerError(responseBody, `Could not delete task: HTTP ${response.status}`));
+        }
+
+        await fetchTasks();
+      } catch (error) {
+        boardState = "error";
+        errorMessage = error instanceof TypeError
+          ? "Could not delete the task. Check your network connection and try again."
+          : error.message;
+        renderBoard(tasks);
+      }
+    }
+
+    async function moveTask(taskId, targetStatus) {
+      const task = tasks.find((item) => item.id === taskId);
+
+      if (!task || task.status === targetStatus) {
+        return;
+      }
+
+      const previousStatus = task.status;
+      task.status = targetStatus;
+      boardState = "ready";
+      renderBoard(tasks);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: targetStatus }),
+        });
+        const responseBody = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(getServerError(responseBody, `Could not update task: HTTP ${response.status}`));
+        }
+
+        Object.assign(task, responseBody);
+        boardState = "ready";
+        renderBoard(tasks);
+      } catch (error) {
+        task.status = previousStatus;
+        boardState = "error";
+        errorMessage = error instanceof TypeError
+          ? "Could not update the task. Check your network connection and try again."
+          : error.message;
+        renderBoard(tasks);
+      }
+    }
+
+    function setupDropTargets() {
+      document.querySelectorAll(".column").forEach((column) => {
+        column.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          column.classList.add("is-drag-over");
+        });
+
+        column.addEventListener("dragleave", (event) => {
+          if (!column.contains(event.relatedTarget)) {
+            column.classList.remove("is-drag-over");
+          }
+        });
+
+        column.addEventListener("drop", async (event) => {
+          event.preventDefault();
+          column.classList.remove("is-drag-over");
+          await moveTask(event.dataTransfer.getData("text/plain"), column.dataset.status);
+        });
+      });
+    }
+
+    newTaskButton.addEventListener("click", openCreateTaskModal);
+    overdueFilter.addEventListener("change", fetchTasks);
+    deletedFilter.addEventListener("change", () => {
+      overdueFilter.disabled = deletedFilter.checked;
+      if (deletedFilter.checked) {
+        overdueFilter.checked = false;
+      }
+      fetchTasks();
+    });
+    document.querySelector("#close-modal-button").addEventListener("click", closeTaskModal);
+    document.querySelector("#cancel-modal-button").addEventListener("click", closeTaskModal);
+    taskModal.addEventListener("cancel", clearTaskForm);
+    taskModal.addEventListener("click", (event) => {
+      if (event.target === taskModal) {
+        closeTaskModal();
+      }
+    });
+    taskForm.addEventListener("submit", saveTask);
+
+    setupDropTargets();
+    fetchTasks();
+  </script>
+</body>
+</html>
