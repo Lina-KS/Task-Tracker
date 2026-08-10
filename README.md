@@ -9,18 +9,24 @@ and local JSON-file storage.
 backend/            FastAPI application and JSON data
 frontend/           Static browser frontend
 tests/              Pytest test suite
-docs/               Required mid-course Markdown deliverables
+docs/midcourse/     Required midcourse Markdown deliverables
 ```
 
 ## Documentation deliverables
 
-The concise mid-course documentation is in `docs/`:
+The required midcourse documentation is in `docs/midcourse/`:
 
 - `user-stories.md`
 - `mini-adr.md`
 - `prompt-log.md`
 - `verification.md`
 - `reflection.md`
+
+The submission includes the complete 25-test suite: all baseline tests plus
+eight feature tests, exceeding the requirement for at least four new pytest
+tests. The selected features are due dates with overdue filtering and Activity
+Log. Deletion is permanent and records a `deleted` event; the submission has no
+deleted-task filter, Deleted view, restore endpoint, or restore action.
 
 ## Windows PowerShell setup
 
