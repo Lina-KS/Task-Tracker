@@ -47,13 +47,11 @@ def list_tasks(
     status: TaskStatus | None = None,
     priority: TaskPriority | None = None,
     overdue: bool | None = None,
-    deleted: bool | None = None,
 ) -> list[TaskResponse]:
     return storage.get_all_tasks(
         status=status,
         priority=priority,
         overdue=overdue,
-        deleted=deleted,
     )
 
 
@@ -103,19 +101,6 @@ def delete_task(task_id: str) -> None:
             status_code=404,
             detail=f"Task with id {task_id} not found",
         )
-
-
-@app.post("/tasks/{task_id}/restore", response_model=TaskResponse, tags=["tasks"])
-def restore_task(task_id: str) -> TaskResponse:
-    task = storage.restore_task(task_id)
-
-    if task is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Deleted task with id {task_id} not found",
-        )
-
-    return task
 
 
 @app.get("/activity", response_model=list[ActivityResponse], tags=["activity"])

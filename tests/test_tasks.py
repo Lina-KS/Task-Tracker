@@ -2,8 +2,6 @@ from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
-from app import storage
-
 
 def test_create_task_valid_returns_201_with_full_body(client: TestClient):
     response = client.post(
@@ -27,7 +25,6 @@ def test_create_task_valid_returns_201_with_full_body(client: TestClient):
         "priority",
         "assignee",
         "due_date",
-        "is_deleted",
         "created_at",
         "updated_at",
         "is_overdue",
@@ -38,7 +35,6 @@ def test_create_task_valid_returns_201_with_full_body(client: TestClient):
     assert body["priority"] == "High"
     assert body["assignee"] == "Ada"
     assert body["due_date"] is None
-    assert body["is_deleted"] is False
     assert body["is_overdue"] is False
     assert body["id"]
     assert body["created_at"]
@@ -286,47 +282,18 @@ def test_patch_status_change_generates_from_and_to_activity_event(
     }
 
 
-def test_delete_moves_task_to_deleted_filter_and_generates_activity_event(
+def test_delete_permanently_removes_task_and_generates_activity_event(
     client: TestClient,
     created_task: dict,
 ):
     delete_response = client.delete(f"/tasks/{created_task['id']}")
     active_response = client.get("/tasks")
-    deleted_response = client.get("/tasks", params={"deleted": "true"})
+    get_response = client.get(f"/tasks/{created_task['id']}")
     activity_response = client.get("/activity")
 
     assert delete_response.status_code == 204
     assert active_response.json() == []
-    assert deleted_response.status_code == 200
-    assert deleted_response.json()[0]["id"] == created_task["id"]
-    assert deleted_response.json()[0]["is_deleted"] is True
+    assert get_response.status_code == 404
     assert activity_response.json()[0]["event_type"] == "deleted"
-
-
-def test_restore_deleted_task_returns_it_to_active_results_and_generates_activity_event(
-    client: TestClient,
-    created_task: dict,
-):
-    client.delete(f"/tasks/{created_task['id']}")
-
-    restore_response = client.post(f"/tasks/{created_task['id']}/restore")
-    active_response = client.get("/tasks")
-    deleted_response = client.get("/tasks", params={"deleted": "true"})
-    activity_response = client.get("/activity")
-
-    assert restore_response.status_code == 200
-    assert restore_response.json()["is_deleted"] is False
-    assert [task["id"] for task in active_response.json()] == [created_task["id"]]
-    assert deleted_response.json() == []
-    assert activity_response.json()[0]["event_type"] == "restored"
-
-
-def test_deleted_task_state_persists_after_storage_reload(client: TestClient, created_task: dict):
-    client.delete(f"/tasks/{created_task['id']}")
-
-    storage._reload_for_tests()
-    response = client.get("/tasks", params={"deleted": "true"})
-
-    assert response.status_code == 200
-    assert response.json()[0]["id"] == created_task["id"]
-    assert response.json()[0]["is_deleted"] is True
+    assert activity_response.json()[0]["task_id"] == created_task["id"]
+    assert activity_response.json()[0]["details"] == {"title": "fixture task"}

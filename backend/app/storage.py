@@ -109,14 +109,8 @@ def get_all_tasks(
     status: TaskStatus | None = None,
     priority: TaskPriority | None = None,
     overdue: bool | None = None,
-    deleted: bool | None = None,
 ) -> list[TaskResponse]:
     tasks = list(_tasks.values())
-
-    if deleted is True:
-        tasks = [task for task in tasks if task.is_deleted]
-    else:
-        tasks = [task for task in tasks if not task.is_deleted]
 
     if status is not None:
         tasks = [task for task in tasks if task.status == status]
@@ -130,13 +124,8 @@ def get_all_tasks(
     return tasks
 
 
-def get_task_by_id(task_id: str, include_deleted: bool = False) -> Optional[TaskResponse]:
-    task = _tasks.get(task_id)
-
-    if task is None or (task.is_deleted and not include_deleted):
-        return None
-
-    return task
+def get_task_by_id(task_id: str) -> Optional[TaskResponse]:
+    return _tasks.get(task_id)
 
 
 def update_task(task_id: str, payload: TaskUpdate) -> Optional[TaskResponse]:
@@ -182,39 +171,14 @@ def update_task(task_id: str, payload: TaskUpdate) -> Optional[TaskResponse]:
 
 
 def delete_task(task_id: str) -> bool:
-    task = get_task_by_id(task_id)
+    task = _tasks.pop(task_id, None)
 
     if task is None:
         return False
 
-    deleted_task = task.model_copy(
-        update={
-            "is_deleted": True,
-            "updated_at": datetime.now(timezone.utc),
-        }
-    )
-    _tasks[task_id] = deleted_task
     _save_tasks()
-    _record_event(ActivityEventType.DELETED, deleted_task, {"title": task.title})
+    _record_event(ActivityEventType.DELETED, task, {"title": task.title})
     return True
-
-
-def restore_task(task_id: str) -> Optional[TaskResponse]:
-    task = _tasks.get(task_id)
-
-    if task is None or not task.is_deleted:
-        return None
-
-    restored_task = task.model_copy(
-        update={
-            "is_deleted": False,
-            "updated_at": datetime.now(timezone.utc),
-        }
-    )
-    _tasks[task_id] = restored_task
-    _save_tasks()
-    _record_event(ActivityEventType.RESTORED, restored_task, {"title": task.title})
-    return restored_task
 
 
 def get_activity() -> list[ActivityResponse]:

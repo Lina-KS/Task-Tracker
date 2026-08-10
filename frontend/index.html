@@ -46,7 +46,6 @@
       gap: 6px;
     }
 
-    .deleted-section,
     .activity-panel {
       background: #ffffff;
       border: 1px solid #d0d5dd;
@@ -67,7 +66,6 @@
       margin: 0;
     }
 
-    .deleted-task-list,
     .activity-list {
       display: grid;
       gap: 10px;
@@ -88,14 +86,6 @@
     .activity-time {
       color: #667085;
       font-size: 0.8rem;
-    }
-
-    .restore-button {
-      background: #ffffff;
-      border: 1px solid #98a2b3;
-      border-radius: 6px;
-      color: #344054;
-      padding: 7px 10px;
     }
 
     h1 {
@@ -396,10 +386,6 @@
           <input id="overdue-filter" type="checkbox">
           Overdue only
         </label>
-        <label class="overdue-filter" for="deleted-filter">
-          <input id="deleted-filter" type="checkbox">
-          Show deleted
-        </label>
         <button class="new-task-button" id="new-task-button" type="button">New Task</button>
       </div>
     </header>
@@ -459,14 +445,6 @@
           </article>
         </div>
       </section>
-    </section>
-
-    <section class="deleted-section" hidden id="deleted-section" aria-label="Deleted tasks">
-      <header class="section-header">
-        <h2>Deleted</h2>
-        <span class="task-count" id="deleted-task-count">0</span>
-      </header>
-      <div class="deleted-task-list" id="deleted-task-list"></div>
     </section>
 
     <section class="activity-panel" aria-label="Recent activity">
@@ -557,10 +535,6 @@
     const taskPriorityInput = document.querySelector("#task-priority");
     const taskAssigneeInput = document.querySelector("#task-assignee");
     const overdueFilter = document.querySelector("#overdue-filter");
-    const deletedFilter = document.querySelector("#deleted-filter");
-    const deletedSection = document.querySelector("#deleted-section");
-    const deletedTaskList = document.querySelector("#deleted-task-list");
-    const deletedTaskCount = document.querySelector("#deleted-task-count");
     const activityList = document.querySelector("#activity-list");
     const taskFormError = document.querySelector("#task-form-error");
     const saveTaskButton = document.querySelector("#save-task-button");
@@ -678,43 +652,6 @@
       return card;
     }
 
-    function renderDeletedTaskCard(task) {
-      const card = document.createElement("article");
-      const description = task.description || "No description";
-      const assignee = task.assignee || "Unassigned";
-      const dueDate = task.due_date
-        ? `<p class="task-due-date">Due: ${escapeTaskText(task.due_date)}</p>`
-        : "";
-
-      card.className = "task-card";
-      card.dataset.taskId = task.id;
-      card.innerHTML = `
-        <h3>${escapeTaskText(task.title)}</h3>
-        <p class="task-description">${escapeTaskText(description)}</p>
-        <div class="task-meta">
-          <span class="priority priority-${escapeTaskText(task.priority.toLowerCase())}">${escapeTaskText(task.priority)}</span>
-          <span class="assignee">${escapeTaskText(assignee)}</span>
-        </div>
-        ${dueDate}
-        <button class="restore-button" type="button">Restore</button>
-      `;
-
-      card.querySelector(".restore-button").addEventListener("click", () => restoreTask(task.id));
-      return card;
-    }
-
-    function renderDeletedTasks(tasksToRender, message = "No deleted tasks.") {
-      deletedTaskList.replaceChildren();
-      deletedTaskCount.textContent = tasksToRender.length;
-
-      if (tasksToRender.length === 0) {
-        renderEmptyColumn(deletedTaskList, message);
-        return;
-      }
-
-      sortTasks(tasksToRender).forEach((task) => deletedTaskList.append(renderDeletedTaskCard(task)));
-    }
-
     function activitySummary(event) {
       if (event.event_type === "status_changed") {
         return `Status changed from ${event.details.from_status} to ${event.details.to_status}`;
@@ -808,25 +745,13 @@
     }
 
     async function fetchTasks() {
-      const showingDeleted = deletedFilter.checked;
-
-      board.hidden = showingDeleted;
-      deletedSection.hidden = !showingDeleted;
       boardState = "loading";
       errorMessage = "";
 
-      if (showingDeleted) {
-        renderDeletedTasks([], "Loading deleted tasks…");
-      } else {
-        renderBoard([]);
-      }
+      renderBoard([]);
 
       try {
-        const query = showingDeleted
-          ? "?deleted=true"
-          : overdueFilter.checked
-            ? "?overdue=true"
-            : "";
+        const query = overdueFilter.checked ? "?overdue=true" : "";
         const response = await fetch(`${API_BASE_URL}/tasks${query}`);
 
         if (!response.ok) {
@@ -835,23 +760,12 @@
 
         tasks = await response.json();
 
-        if (showingDeleted) {
-          renderDeletedTasks(tasks);
-          await fetchActivity();
-          return;
-        }
-
         boardState = tasks.length === 0 ? "empty" : "ready";
         renderBoard(tasks);
         await fetchActivity();
       } catch (error) {
         console.error(error);
         tasks = [];
-
-        if (showingDeleted) {
-          renderDeletedTasks([], "Could not load deleted tasks. Check that the API is running, then try again.");
-          return;
-        }
 
         boardState = "error";
         errorMessage = "Could not load tasks. Check that the API is running, then try again.";
@@ -990,28 +904,6 @@
       }
     }
 
-    async function restoreTask(taskId) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}/restore`, {
-          method: "POST",
-        });
-        const responseBody = await response.json().catch(() => null);
-
-        if (!response.ok) {
-          throw new Error(getServerError(responseBody, `Could not restore task: HTTP ${response.status}`));
-        }
-
-        await fetchTasks();
-      } catch (error) {
-        renderDeletedTasks(
-          tasks,
-          error instanceof TypeError
-            ? "Could not restore the task. Check your network connection and try again."
-            : error.message,
-        );
-      }
-    }
-
     async function deleteTask(taskId) {
       try {
         const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
@@ -1094,13 +986,6 @@
 
     newTaskButton.addEventListener("click", openCreateTaskModal);
     overdueFilter.addEventListener("change", fetchTasks);
-    deletedFilter.addEventListener("change", () => {
-      overdueFilter.disabled = deletedFilter.checked;
-      if (deletedFilter.checked) {
-        overdueFilter.checked = false;
-      }
-      fetchTasks();
-    });
     document.querySelector("#close-modal-button").addEventListener("click", closeTaskModal);
     document.querySelector("#cancel-modal-button").addEventListener("click", closeTaskModal);
     taskModal.addEventListener("cancel", clearTaskForm);

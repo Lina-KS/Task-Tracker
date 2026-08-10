@@ -22,7 +22,6 @@ class ActivityEventType(str, Enum):
     UPDATED = "updated"
     STATUS_CHANGED = "status_changed"
     DELETED = "deleted"
-    RESTORED = "restored"
 
 
 class TaskCreate(BaseModel):
@@ -86,7 +85,6 @@ class TaskResponse(BaseModel):
     priority: TaskPriority
     assignee: Optional[str]
     due_date: date | None
-    is_deleted: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -97,7 +95,6 @@ class TaskResponse(BaseModel):
             self.due_date is not None
             and self.due_date < datetime.now(timezone.utc).date()
             and self.status != TaskStatus.DONE
-            and not self.is_deleted
         )
 
 
