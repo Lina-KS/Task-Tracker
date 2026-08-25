@@ -47,3 +47,8 @@ The Dockerfile uses `USER appuser`, copies `requirements.txt` and `app/`, exclud
 | Tests do not modify application JSON. | `tests/conftest.py` redirects storage to pytest `tmp_path`. | Confirmed by inspection. |
 | CI installs dependencies and runs pytest. | `.github/workflows/ci.yml` and linked Actions run. | Confirmed: online `test` job succeeded. |
 | Docker runs non-root without `.env`. | `Dockerfile`, `.dockerignore`, and linked Actions run. | Confirmed: online build/run/health job succeeded. |
+
+## Current CI run
+
+The current branch head passed the test and Docker jobs: <https://github.com/Lina-KS/Task-Tracker/actions/runs/32821075277>.
+Earlier run links above refer to superseded commits.
