@@ -1,0 +1,17 @@
+.git
+.github
+.pytest_cache
+**/__pycache__
+**/*.py[cod]
+**/.env
+**/.venv
+**/venv
+app/data/tasks.json
+app/data/activity.json
+docs
+final-submission
+instructions
+output
+server-commands
+tests
+tmp

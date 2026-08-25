@@ -1,166 +1,85 @@
 # Task Tracker
 
-A task-tracking application with a FastAPI backend, a static HTML frontend,
-and local JSON-file storage.
+A small FastAPI Task Tracker with a static Kanban frontend and local JSON storage.
+
+## Final Project
+
+Branch reviewed: `final-project`
+
+This submission demonstrates that the existing app remains in scope, pytest runs in CI, Docker builds and verifies `/health`, and AI-assisted work was reviewed rather than accepted blindly.
 
 ## Project structure
 
 ```text
-backend/            FastAPI application and JSON data
-frontend/           Static browser frontend
-tests/              Pytest test suite
-docs/midcourse/     Required midcourse Markdown deliverables
+.github/workflows/ci.yml
+app/                         FastAPI application and JSON data
+frontend/                    Static HTML/CSS/JavaScript frontend
+tests/                       Pytest suite
+docs/                        Final evidence and AI playbook
+Dockerfile
+.dockerignore
+AGENTS.md
+requirements.txt
+README.md
 ```
 
-## Documentation deliverables
+## How to run locally
 
-The required midcourse documentation is in `docs/midcourse/`:
-
-- `user-stories.md`
-- `mini-adr.md`
-- `prompt-log.md`
-- `verification.md`
-- `reflection.md`
-
-The submission includes the complete 25-test suite: all baseline tests plus
-eight feature tests, exceeding the requirement for at least four new pytest
-tests. The selected features are due dates with overdue filtering and Activity
-Log. Deletion is permanent and records a `deleted` event; the submission has no
-deleted-task filter, Deleted view, restore endpoint, or restore action.
-
-## Windows PowerShell setup
-
-Run these commands from the project root:
-
-```powershell
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
-```
-
-If PowerShell prevents the activation script from running, allow scripts only
-for the current terminal session, then activate the environment again:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\venv\Scripts\Activate.ps1
-```
-
-Successful activation adds `(venv)` to the beginning of the PowerShell prompt.
-The `source` command is for Linux and macOS and does not work in PowerShell.
-
-## Linux/macOS setup
-
-Run these commands from the project root:
+Use Python 3.12 or newer. From the repository root:
 
 ```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
+python -m venv .venv
+# Linux/macOS: source .venv/bin/activate
+# Windows PowerShell: .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-cp .env.example .env
-```
-
-## Run the project locally
-
-The backend and frontend need to run at the same time, so use two terminals.
-
-### 1. Start the backend
-
-In the first terminal, change to `backend`, activate its virtual environment,
-and run Uvicorn as a Python module.
-
-Windows PowerShell:
-
-```powershell
-cd backend
-.\venv\Scripts\Activate.ps1
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Linux/macOS:
+The API is at <http://localhost:8000>, `/health` is at <http://localhost:8000/health>, and Swagger documentation is at <http://localhost:8000/docs>.
+
+In a second terminal, serve the frontend:
 
 ```bash
-cd backend
-source venv/bin/activate
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-If Python reports `No module named uvicorn`, install the backend dependencies
-inside the activated environment:
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-If startup reports `WinError 10013` or says the address is already in use,
-another process may already be using port `8000`. Check it in PowerShell:
-
-```powershell
-netstat -ano | Select-String ':8000'
-```
-
-The number in the last column is the process ID (PID). If it is an old backend
-process, stop it and start Uvicorn again:
-
-```powershell
-Stop-Process -Id <PID>
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-Do not stop the process if it belongs to another application you still need.
-
-The API is available at <http://localhost:8000>. Its interactive Swagger
-documentation is at <http://localhost:8000/docs>.
-
-### 2. Open the frontend
-
-In a second terminal, start a static file server from the project root:
-
-```powershell
 cd frontend
 python -m http.server 5500
 ```
 
-Then open <http://localhost:5500> in a browser. Keep the backend terminal
-running. Do not open `frontend/index.html` directly with a `file://` URL.
+Open <http://localhost:5500>. Do not open `index.html` with a `file://` URL.
 
-## Run the tests
+## How to run tests
 
-Install the test dependencies once inside the activated backend environment:
+From the repository root with the environment activated:
 
-```powershell
-cd backend
-.\venv\Scripts\Activate.ps1
+```bash
 python -m pip install pytest httpx
+python -m pytest tests -q
 ```
 
-Then run the test suite from the `backend` directory:
+The tests redirect storage to temporary files and do not modify `app/data/`.
 
-```powershell
-python -m pytest ../tests
+## How to run with Docker
+
+From the repository root:
+
+```bash
+docker build -t task-tracker:final .
+docker run --rm --name task-tracker-final -p 8000:8000 task-tracker:final
 ```
 
-The tests use temporary JSON files and do not modify the data in
-`backend/data/`.
+In another terminal:
 
-## Check the API
-
-With the backend running, open <http://localhost:8000/health> or run:
-
-```powershell
-Invoke-RestMethod http://localhost:8000/health
+```bash
+curl --fail http://localhost:8000/health
 ```
 
-Expected response shape:
+The image runs as an unprivileged user and does not copy `.env` files.
 
-```json
-{
-  "status": "ok",
-  "timestamp": "<current ISO timestamp>"
-}
-```
+## Evidence files
 
-To leave the virtual environment, run `deactivate`.
+- `docs/release-evidence.md`
+- `docs/final-ai-review.md`
+- `docs/ai-playbook.md`
+
+## AI assistance summary
+
+AI helped review CI, Docker, documentation, security checks, and the final folder layout. I verified the result with tests, diff review, direct `/health` checks, CI, and a manual secret scan. I corrected the earlier advice to retain `backend/app/` after the final requirement explicitly confirmed that `app/` must be at the repository root.

@@ -14,7 +14,7 @@ from app.models import (
     TaskUpdate,
 )
 
-_DATA_DIRECTORY = Path(__file__).resolve().parent.parent / "data"
+_DATA_DIRECTORY = Path(__file__).resolve().parent / "data"
 _TASKS_FILE = _DATA_DIRECTORY / "tasks.json"
 _ACTIVITY_FILE = _DATA_DIRECTORY / "activity.json"
 
@@ -59,13 +59,25 @@ def _save_activity() -> None:
 def _load_storage() -> None:
     global _activity, _tasks
 
+    task_records = _read_records(_TASKS_FILE)
+    active_task_records = []
+    for record in task_records:
+        # Migrate data written by the removed soft-delete feature. Previously
+        # deleted tasks stay deleted; active tasks lose the obsolete marker.
+        if record.get("is_deleted") is True:
+            continue
+        active_task_records.append(
+            {key: value for key, value in record.items() if key != "is_deleted"}
+        )
+
     _tasks = {
         task.id: task
-        for task in (TaskResponse.model_validate(record) for record in _read_records(_TASKS_FILE))
+        for task in (TaskResponse.model_validate(record) for record in active_task_records)
     }
     _activity = [
         ActivityResponse.model_validate(record)
         for record in _read_records(_ACTIVITY_FILE)
+        if record.get("event_type") != "restored"
     ]
 
 

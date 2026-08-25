@@ -13,8 +13,13 @@ env/
 .env.*
 !.env.example
 
+# Local runtime data
+app/data/tasks.json
+app/data/activity.json
+
 # Test and tool caches
 .pytest_cache/
+.test-tmp/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -30,10 +35,3 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
-
-# Runtime data and local deliverables
-backend/data/*.json
-!backend/data/tasks.json
-!backend/data/activity.json
-output/
-tmp/
